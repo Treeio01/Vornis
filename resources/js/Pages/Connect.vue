@@ -956,7 +956,7 @@ onMounted(() => {
             <span
                 class="leading-[100%] tracking-[-0.04em] text-white/30 !font-Inter"
             >
-                © 2025 Vornis servise. All Rights Reserved.
+            © 2025 Vornis. All Rights Reserved.
             </span>
         </div>
         <!-- notification -->

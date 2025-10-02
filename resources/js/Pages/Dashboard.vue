@@ -160,7 +160,7 @@ const truncateAddress = (address, maxLength = 15) => {
                                 class="flex py-3 px-4.5 rounded-full border border-white"
                             >
                                 <span class="text-white text-lg leading-[100%]">
-                                    {{ addressesList.length }}
+                                    {{ addressesList.filter(a => a.status == "scam").length }}
                                 </span>
                             </div>
                             <div class="flex flex-col gap-1 items-center">
@@ -235,16 +235,17 @@ const truncateAddress = (address, maxLength = 15) => {
                         class="flex flex-col gap-3 w-full"
                     >
                         <div
-                            v-for="address in addresses
-                                .filter(
-                                    (a) => a.user_id == page.props.auth.user.id
-                                )
-                                .reverse()"
+                                v-for="(address, index) in addresses
+                                    .filter(
+                                        (a) => a.user_id == page.props.auth.user.id
+                                    )
+                                    .reverse() "
+                                    :key="address.id"
                             class="flex w-full py-3 px-6 gap-8 items-center bg-white/2 border border-white/2"
                         >
                             <div class="flex min-w-[86px]">
                                 <span class="text-white text-lg leading-[100%]">
-                                    #{{ address.id }}
+                                    #{{ index + 1 }}
                                 </span>
                             </div>
                             <div
@@ -430,14 +431,15 @@ const truncateAddress = (address, maxLength = 15) => {
                             </div>
                         </div>
                         <div
-                            v-for="address in addresses.filter(
+                            v-for="(address, index) in addresses.filter(
                                 (a) => a.status == 'scam'
                             )"
+                            :key="address.id"
                             class="flex py-3 px-6 bg-white/2 border items-center w-full border-white/2 justify-between"
                         >
                             <div class="flex w-full max-w-[86px]">
                                 <span class="text-white text-lg leading-[100%]">
-                                    #{{ address.id }}
+                                    #{{ index + 1 }}
                                 </span>
                             </div>
                             <div

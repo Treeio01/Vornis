@@ -266,12 +266,13 @@ const filteredAddresses = computed(() => {
                         </div>
 
                         <div
-                            v-for="address in filteredAddresses"
+                            v-for="(address, index) in filteredAddresses"
+                            :key="address.id"
                             class="flex w-full py-3 px-6 justify-between items-center bg-white/2 border border-white/2"
                         >
                             <div class="flex w-full max-w-[86px]">
                                 <span class="text-white text-lg leading-[100%]">
-                                    #{{ address.id }}
+                                    #{{ index + 1 }}
                                 </span>
                             </div>
                             <div

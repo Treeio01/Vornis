@@ -1,0 +1,1 @@
+import{d as r,a as s,w as c,b as d,D as l,T as _,f}from"./app-CL5_y1gZ.js";const i=(e,t)=>{const a=e.__vccOpts||e;for(const[o,n]of t)a[o]=n;return a},u={};function p(e,t){return f(),r("div",null,[s(_,{name:"fade",mode:"out-in",appear:""},{default:c(()=>[d("div",null,[l(e.$slots,"default")])]),_:3})])}const v=i(u,[["render",p]]);export{v as L,i as _};

@@ -182,13 +182,14 @@ watch(
                         </div>
                     </div>
                     <div
-                        v-for="address in addresses"
+                        v-for="(address, index) in addresses"
+                        :key="address.id"
                         @click="openModal(address)"
                         class="flex py-3 px-6 bg-white/2 border items-center w-full border-white/2 justify-between cursor-pointer hover:bg-white/5 transition-colors duration-200"
                     >
                         <div class="flex w-full max-w-[86px]">
                             <span class="text-white text-lg leading-[100%]">
-                                #{{ address.id }}
+                                #{{ index + 1 }}
                             </span>
                         </div>
                         <div

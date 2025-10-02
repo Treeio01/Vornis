@@ -30,10 +30,10 @@ Route::get('/', function () {
 
 Route::get('/login', function () {
     return Inertia::render('Login');
-})->name('login');
+})->middleware('guest')->name('login');
 Route::get('/register', function () {
     return Inertia::render('Register');
-})->name('register');
+})->middleware('guest')->name('register');
 
 Route::middleware('auth')->group(function () {
     Route::get('/connect', function () {
