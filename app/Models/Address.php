@@ -1,10 +1,13 @@
 <?php
 
 namespace App\Models;
+
+use App\Enums\AddressStatus;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Carbon\Carbon;
+
 class Address extends Model
 {
     use HasFactory;
@@ -17,6 +20,10 @@ class Address extends Model
         "token",
         "user_id",
         "comment"
+    ];
+
+    protected $casts = [
+        'status' => AddressStatus::class,
     ];
 
     public function user()

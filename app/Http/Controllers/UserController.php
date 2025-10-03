@@ -2,20 +2,20 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-use Inertia\Inertia;
+use App\Http\Requests\ConnectWalletRequest;
+use App\Services\UserService;
+use Illuminate\Http\RedirectResponse;
+
 class UserController extends Controller
 {
-    public function connect(Request $request)
+    public function __construct(private readonly UserService $userService)
     {
-        $request->validate([
-            "walletAddress" => ["required"]
-        ]);
+    }
 
-        $user = $request->user();
-        $user->address = $request->walletAddress;
-        $user->save();
+    public function connect(ConnectWalletRequest $request): RedirectResponse
+    {
+        $this->userService->connectWallet($request->user(), $request->validated('walletAddress'));
 
-        return redirect()->route("dashboard");
+        return redirect()->route('dashboard');
     }
 }

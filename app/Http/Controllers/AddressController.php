@@ -2,31 +2,25 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Address;
-use Illuminate\Http\Request;
+use App\Data\AddressData;
+use App\Http\Requests\StoreAddressRequest;
+use App\Services\AddressService;
+use Illuminate\Http\RedirectResponse;
 
 class AddressController extends Controller
 {
-    public function store(Request $request)
+    public function __construct(private readonly AddressService $addressService)
     {
-        $request->validate([
-            "token" => ["required"],
-            "comment" => ["required"],
-            "address" => ["nullable"]
-        ]);
+    }
 
-        $address = new Address();
-        $address->user_id = $request->user()->id;
-        $address->address = $request->address;
-        $address->token = $request->token;
-        $address->comment = $request->comment;
-        $address->status = "pending";
-        $address->save();
-
-
+    public function store(StoreAddressRequest $request): RedirectResponse
+    {
+        $this->addressService->storeForUser($request->user(), $request->validated());
 
         return back()->with([
-            'addresses' => Address::all(),
+            'addresses' => AddressData::collection(
+                $this->addressService->getAll()
+            ),
         ]);
     }
 }

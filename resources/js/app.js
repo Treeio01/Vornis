@@ -17,10 +17,10 @@ createInertiaApp({
             .use(plugin)
             .use(ZiggyVue);
 
-        // Инициализируем AOS после монтирования приложения
+
         app.mount(el);
 
-        // Инициализируем AOS с небольшой задержкой
+
         setTimeout(() => {
             initAOS();
         }, 100);

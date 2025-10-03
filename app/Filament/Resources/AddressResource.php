@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources;
 
+use App\Enums\AddressStatus;
 use App\Filament\Resources\AddressResource\Pages;
 use App\Filament\Resources\AddressResource\RelationManagers;
 use App\Models\Address;
@@ -35,11 +36,7 @@ class AddressResource extends Resource
                     ->maxLength(255),
                 Forms\Components\Select::make('status')
                     ->label('Статус')
-                    ->options([
-                        'pending' => 'Pending',
-                        'verified' => 'Verified',
-                        'scam' => 'Scam',
-                    ])
+                    ->options(AddressStatus::options())
                     ->required(),
                 Forms\Components\TextInput::make('remark')
                     ->label('Замечание')
@@ -74,13 +71,10 @@ class AddressResource extends Resource
                     ->searchable()
                     ->copyable()
                     ->limit(20),
+
                 Tables\Columns\BadgeColumn::make('status')
                     ->label('Статус')
-                    ->colors([
-                        'warning' => 'pending',
-                        'success' => 'verified',
-                        'danger' => 'scam',
-                    ]),
+                    ->colors(AddressStatus::colorMap()),
                 Tables\Columns\TextColumn::make('user.email')
                     ->label('Пользователь')
                     ->searchable(),
@@ -99,11 +93,7 @@ class AddressResource extends Resource
             ->filters([
                 Tables\Filters\SelectFilter::make('status')
                     ->label('Статус')
-                    ->options([
-                        'pending' => 'Pending',
-                        'verified' => 'Verified',
-                        'scam' => 'Scam',
-                    ]),
+                    ->options(AddressStatus::options()),
             ])
             ->actions([
                 Action::make('mark_scam')
@@ -122,24 +112,24 @@ class AddressResource extends Resource
                     ])
                     ->action(function (Address $record, array $data) {
                         $record->update([
-                            'status' => 'scam',
+                            'status' => AddressStatus::Scam,
                             'remark' => $data['remark'],
                             'reward' => $data['reward'],
                         ]);
-                        
+
                         // Обновляем баланс пользователя
                         $user = User::find($record->user_id);
                         if ($user) {
                             $user->increment('balance', $data['reward']);
                         }
-                        
+
                         Notification::make()
                             ->title('Адрес помечен как SCAM')
                             ->success()
                             ->send();
                     })
-                    ->visible(fn (Address $record) => $record->status !== 'scam'),
-                
+                    ->visible(fn (Address $record) => $record->status !== AddressStatus::Scam),
+
                 Action::make('mark_verified')
                     ->label('VERIFIED')
                     ->color('success')
@@ -156,24 +146,24 @@ class AddressResource extends Resource
                     ])
                     ->action(function (Address $record, array $data) {
                         $record->update([
-                            'status' => 'verified',
+                            'status' => AddressStatus::Verified,
                             'remark' => $data['remark'],
                             'reward' => $data['reward'],
                         ]);
-                        
+
                         // Обновляем баланс пользователя
                         $user = User::find($record->user_id);
                         if ($user) {
                             $user->increment('balance', $data['reward']);
                         }
-                        
+
                         Notification::make()
                             ->title('Адрес помечен как VERIFIED')
                             ->success()
                             ->send();
                     })
-                    ->visible(fn (Address $record) => $record->status !== 'verified'),
-                
+                    ->visible(fn (Address $record) => $record->status !== AddressStatus::Verified),
+
                 Action::make('mark_pending')
                     ->label('PENDING')
                     ->color('warning')
@@ -190,24 +180,24 @@ class AddressResource extends Resource
                     ])
                     ->action(function (Address $record, array $data) {
                         $record->update([
-                            'status' => 'pending',
+                            'status' => AddressStatus::Pending,
                             'remark' => $data['remark'],
                             'reward' => $data['reward'],
                         ]);
-                        
+
                         // Обновляем баланс пользователя
                         $user = User::find($record->user_id);
                         if ($user) {
                             $user->increment('balance', $data['reward']);
                         }
-                        
+
                         Notification::make()
                             ->title('Адрес помечен как PENDING')
                             ->success()
                             ->send();
                     })
-                    ->visible(fn (Address $record) => $record->status !== 'pending'),
-                
+                    ->visible(fn (Address $record) => $record->status !== AddressStatus::Pending),
+
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make(),
             ])
