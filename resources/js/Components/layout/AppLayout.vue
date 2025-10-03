@@ -9,10 +9,6 @@ const props = defineProps({
         type: Boolean,
         default: true,
     },
-    showFooter: {
-        type: Boolean,
-        default: true,
-    },
 });
 
 const page = usePage();
