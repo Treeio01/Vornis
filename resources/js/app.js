@@ -16,15 +16,15 @@ createInertiaApp({
         const app = createApp({ render: () => h(App, props) })
             .use(plugin)
             .use(ZiggyVue);
-        
+
         // Инициализируем AOS после монтирования приложения
         app.mount(el);
-        
+
         // Инициализируем AOS с небольшой задержкой
         setTimeout(() => {
             initAOS();
         }, 100);
-        
+
         return app;
     },
     progress: {
