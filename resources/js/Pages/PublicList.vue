@@ -1,14 +1,13 @@
 <script setup>
-import { usePage, Head } from "@inertiajs/vue3";
-import Header from "../Components/Header.vue";
-import AddressModal from "../Components/AddressModal.vue";
-import { ref, onMounted, watch } from "vue";
-import { downloadJsonFile } from "../utils/download.js";
-import { copyAddresses } from "../utils/copy.js";
-import { useAOSComposable } from "../composables/useAOS.js";
-import Layout from "../Layout/Layout.vue";
+import { Head } from '@inertiajs/vue3';
+import { ref, watch } from 'vue';
+import AppLayout from '@layout/AppLayout.vue';
+import AddressModal from '@components/AddressModal.vue';
+import { useAOSComposable } from '@composables/useAOS.js';
+import { downloadJsonFile } from '@utils/download.js';
+import { copyAddresses } from '@utils/copy.js';
 
-const { refreshAOS } = useAOSComposable();
+useAOSComposable();
 
 const props = defineProps({
     addresses: {
@@ -17,10 +16,8 @@ const props = defineProps({
     },
 });
 
-const page = usePage();
 const addressesList = ref([]);
 
-// Modal state
 const isModalOpen = ref(false);
 const selectedAddress = ref(null);
 
@@ -38,31 +35,27 @@ const handleDownload = () => {
     downloadJsonFile(addressesList.value);
 };
 
-// Функция для обрезки адреса
-const truncateAddress = (address, maxLength = 15) => {
-    if (!address) return '';
-    if (address.length <= maxLength) return address;
-    return address.substring(0, maxLength) + '...';
-};
-
-onMounted(() => {
-    addressesList.value = props.addresses;
-});
 watch(
     () => props.addresses,
     (newVal) => {
-        addressesList.value = newVal;
-    }
+        addressesList.value = Array.isArray(newVal) ? [...newVal] : [];
+    },
+    { immediate: true }
 );
+
+const truncateAddress = (address, maxLength = 15) => {
+    if (!address) return '';
+    if (address.length <= maxLength) return address;
+    return `${address.substring(0, maxLength)}...`;
+};
 </script>
 
 <template>
-    <Layout>
-    <Head title="Public List - Vornis" />
-    <div class="flex flex-col w-full items-center justify-between bg-black">
-        <Header :twitter="page.props.twitter"/>
+    <AppLayout>
+        <Head title="Public List - Vornis" />
+
         <section
-            class="flex flex-col mt-[58px] gap-8 w-full max-w-[1728px] items-center mb-[58px]"
+            class="mx-auto flex w-full max-w-[1728px] flex-col gap-8 px-6 py-12 lg:px-12"
         >
             <div
                 class="flex w-full flex-col gap-3 p-6 bg-[#0F0F10] border border-white/4 rounded-sm"
@@ -73,7 +66,7 @@ watch(
                 </span>
                 <div class="flex w-full items-center gap-3">
                     <button
-                        @click="copyAddresses(addresses)"
+                        @click="copyAddresses(addressesList)"
                         class="py-4 flex px-6 w-full justify-center gap-2 items-center hover:bg-white/5 transition-colors ease-in-out duration-300 rounded-sm border border-white"
                     >
                         <span
@@ -182,7 +175,7 @@ watch(
                         </div>
                     </div>
                     <div
-                        v-for="(address, index) in addresses"
+                        v-for="(address, index) in addressesList"
                         :key="address.id"
                         @click="openModal(address)"
                         class="flex py-3 px-6 bg-white/2 border items-center w-full border-white/2 justify-between cursor-pointer hover:bg-white/5 transition-colors duration-200"
@@ -221,7 +214,7 @@ watch(
                                 </span>
                             </div>
                             <button
-                                @click="copyAddresses(addresses)"
+                                @click="copyAddresses(addressesList)"
                                 class="hover:opacity-75 transition-opacity ease-in-out duration-300"
                             >
                                 <svg
@@ -271,12 +264,11 @@ watch(
         </section>
         
         <!-- Address Modal -->
-        <AddressModal 
-            :isOpen="isModalOpen" 
-            :address="selectedAddress" 
+        <AddressModal
+            :isOpen="isModalOpen"
+            :address="selectedAddress"
             :isTwoButton="true"
-            @close="closeModal" 
+            @close="closeModal"
         />
-    </div>
-    </Layout>
+    </AppLayout>
 </template>

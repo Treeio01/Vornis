@@ -1,8 +1,8 @@
 <script setup>
-import { Head, Link, usePage, useForm } from "@inertiajs/vue3";
-import InputBlock from "../Components/InputBlock.vue";
-import Button from "../Components/Button.vue";
-import Layout from "../Layout/Layout.vue";
+import { Head, Link, usePage, useForm } from '@inertiajs/vue3';
+import InputBlock from '@components/InputBlock.vue';
+import Button from '@components/Button.vue';
+import AppLayout from '@layout/AppLayout.vue';
 const form = useForm({
     email: "",
     password: "",
@@ -11,7 +11,7 @@ const form = useForm({
 </script>
 
 <template>
-    <Layout>
+    <AppLayout :show-header="false" :show-footer="false">
     <Head title="Register - Vornis" />
     <div
         class="flex flex-col w-full items-center justify-between bg-black min-h-screen pt-[25px] pb-[38px]"
@@ -138,5 +138,5 @@ const form = useForm({
             </span>
         </div>
     </div>
-</Layout>
+    </AppLayout>
 </template>

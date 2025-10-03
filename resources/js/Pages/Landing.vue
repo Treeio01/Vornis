@@ -1,8 +1,8 @@
 <script setup>
-import { Head, Link } from "@inertiajs/vue3";
-import $ from "jquery";
-import { useAOSComposable } from "../composables/useAOS.js";
-import Layout from "../Layout/Layout.vue";
+import { Head, Link } from '@inertiajs/vue3';
+import $ from 'jquery';
+import { useAOSComposable } from '@composables/useAOS.js';
+import AppLayout from '@layout/AppLayout.vue';
 defineProps({
     text: {
         type: String,
@@ -94,7 +94,7 @@ function scrollToSection(id) {
 }
 </style>
 <template>
-    <Layout>
+    <AppLayout :show-header="false" :show-footer="false">
         <Head title="Vornis" />
         <div
             class="flex flex-col items-center w-full bg-black overflow-x-hidden"
@@ -3029,6 +3029,6 @@ function scrollToSection(id) {
                     </a>
                 </div>
             </footer>
-        </div>
-    </Layout>
+    </div>
+    </AppLayout>
 </template>

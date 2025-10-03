@@ -1,12 +1,12 @@
 <script setup>
-import { useForm, usePage, Head } from "@inertiajs/vue3";
-import Button from "../Components/Button.vue";
-import InputBlock from "../Components/InputBlock.vue";
-import { ref, onMounted, watch } from "vue";
-import Header from "../Components/Header.vue";
-import { downloadJsonFile } from "../utils/download.js";
-import Layout from "../Layout/Layout.vue";
-import { useAOSComposable } from "../composables/useAOS.js";
+import { Head, useForm, usePage } from '@inertiajs/vue3';
+import { computed, ref, watch } from 'vue';
+import AppLayout from '@layout/AppLayout.vue';
+import StatCard from '@components/dashboard/StatCard.vue';
+import Button from '@components/Button.vue';
+import InputBlock from '@components/InputBlock.vue';
+import { useAOSComposable } from '@composables/useAOS.js';
+import { downloadJsonFile } from '@utils/download.js';
 
 const props = defineProps({
     addresses: {
@@ -15,169 +15,100 @@ const props = defineProps({
     },
 });
 
-const { refreshAOS } = useAOSComposable();
+useAOSComposable();
 
 const page = usePage();
+
 const addressesList = ref([]);
-onMounted(() => {
-    addressesList.value = props.addresses;
-});
 
 watch(
     () => props.addresses,
     (newVal) => {
-        addressesList.value = newVal;
-    }
+        addressesList.value = Array.isArray(newVal) ? [...newVal] : [];
+    },
+    { immediate: true }
 );
 
 const form = useForm({
-    address: "",
-    token: "",
-    comment: "",
+    address: '',
+    token: '',
+    comment: '',
 });
 
-// Функция для обрезки адреса
+const userId = computed(() => page.props?.auth?.user?.id ?? null);
+
+const myScamCount = computed(
+    () =>
+        addressesList.value.filter(
+            (address) => address.status === 'scam' && address.user_id === userId.value
+        ).length
+);
+
+const myVerifiedCount = computed(
+    () =>
+        addressesList.value.filter(
+            (address) => address.status === 'verified' && address.user_id === userId.value
+        ).length
+);
+
+const myPendingCount = computed(
+    () =>
+        addressesList.value.filter(
+            (address) => address.status === 'pending' && address.user_id === userId.value
+        ).length
+);
+
+const totalScamCount = computed(
+    () => addressesList.value.filter((address) => address.status === 'scam').length
+);
+
 const truncateAddress = (address, maxLength = 15) => {
-    if (!address) return "";
-    if (address.length <= maxLength) return address;
-    return address.substring(0, maxLength) + "...";
+    if (!address) {
+        return '';
+    }
+
+    return address.length <= maxLength ? address : `${address.substring(0, maxLength)}...`;
 };
 </script>
 
 <template>
-    <Layout>
+    <AppLayout>
         <Head title="Dashboard - Vornis" />
-        <div class="flex flex-col w-full items-center justify-between bg-black">
-            <Header :twitter="page.props.twitter" />
-            <section
-                class="flex flex-col mt-[58px] gap-8 w-full max-w-[1728px] items-center mb-[126px]"
+
+        <section class="mx-auto flex w-full max-w-[1728px] flex-col gap-8 px-6 py-12 lg:px-12">
+            <div
+                class="flex w-full flex-col gap-4 rounded-xl border border-white/5 bg-[#0F0F10] p-6"
+                data-aos="fade-up"
+                data-aos-delay="100"
             >
-                <div
-                    class="flex w-full flex-col gap-3 p-6 bg-[#0F0F10] border border-white/4 rounded-sm"
-                    data-aos="fade-up"
-                    data-aos-delay="100"
-                >
-                    <span class="text-white text-2xl leading-[100%]">
-                        Statistic
-                    </span>
-                    <div class="flex gap-3 w-full lg:flex-row flex-col">
-                        <div
-                            class="flex w-full max-w-full lg:max-w-[411px] py-8 gap-1.5 flex-col items-center bg-[#1E79F9]/12 rounded-sm"
-                        >
-                            <div
-                                class="flex py-3 px-4.5 rounded-full border border-white"
-                            >
-                                <span class="text-white text-lg leading-[100%]">
-                                    {{
-                                        addressesList.filter(
-                                            (a) =>
-                                                a.status == "scam" &&
-                                                a.user_id ==
-                                                    page.props.auth.user.id
-                                        ).length
-                                    }}
-                                </span>
-                            </div>
-                            <div class="flex flex-col gap-1 items-center">
-                                <span
-                                    class="text-2xl leading-[100%] text-[#1E79F9]"
-                                >
-                                    My submissions
-                                </span>
-                                <span
-                                    class="text-lg leading-[100%] text-white/50 font-light"
-                                >
-                                    Submitted wallets
-                                </span>
-                            </div>
-                        </div>
-                        <div
-                            class="flex w-full max-w-full lg:max-w-[411px] py-8 gap-1.5 flex-col items-center bg-[#1EF993]/12 rounded-sm"
-                        >
-                            <div
-                                class="flex py-3 px-4.5 rounded-full border border-white"
-                            >
-                                <span class="text-white text-lg leading-[100%]">
-                                    {{
-                                        addressesList.filter(
-                                            (a) =>
-                                                a.status == "scam" &&
-                                                a.user_id ==
-                                                    page.props.auth.user.id
-                                        ).length
-                                    }}
-                                </span>
-                            </div>
-                            <div class="flex flex-col gap-1 items-center">
-                                <span
-                                    class="text-2xl leading-[100%] text-[#1EF993]"
-                                >
-                                    Confirmed
-                                </span>
-                                <span
-                                    class="text-lg leading-[100%] text-white/50 font-light"
-                                >
-                                Confirmed Reports
-                                </span>
-                            </div>
-                        </div>
-
-                        <div
-                            class="flex w-full max-w-full lg:max-w-[411px] py-8 gap-1.5 flex-col items-center bg-[#F9A51E]/12 rounded-sm"
-                        >
-                            <div
-                                class="flex py-3 px-4.5 rounded-full border border-white"
-                            >
-                                <span class="text-white text-lg leading-[100%]">
-                                    {{
-                                        addressesList.filter(
-                                            (a) =>
-                                                a.status == "pending" &&
-                                                a.user_id ==
-                                                    page.props.auth.user.id
-                                        ).length
-                                    }}
-                                </span>
-                            </div>
-                            <div class="flex flex-col gap-1 items-center">
-                                <span
-                                    class="text-2xl leading-[100%] text-[#F9A51E]"
-                                >
-                                    Pending review
-                                </span>
-                                <span
-                                    class="text-lg leading-[100%] text-white/50 font-light"
-                                >
-                                    Number of addresses with “pending” status.
-                                </span>
-                            </div>
-                        </div>
-
-                        <div
-                            class="flex w-full max-w-full lg:max-w-[411px] py-8 gap-1.5 flex-col items-center bg-[#758CED]/12 rounded-sm"
-                        >
-                            <div
-                                class="flex py-3 px-4.5 rounded-full border border-white"
-                            >
-                                <span class="text-white text-lg leading-[100%]">
-                                    {{ addressesList.filter(a => a.status == "scam").length }}
-                                </span>
-                            </div>
-                            <div class="flex flex-col gap-1 items-center">
-                                <span
-                                    class="text-2xl leading-[100%] text-[#758CED]"
-                                >
-                                    Database total
-                                </span>
-                                <span
-                                    class="text-lg leading-[100%] text-white/50 font-light"
-                                >
-                                    Number of addresses in the public list.
-                                </span>
-                            </div>
-                        </div>
-                    </div>
+                <h2 class="text-2xl font-semibold text-white">Statistic</h2>
+                <div class="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+                    <StatCard
+                        :value="myScamCount"
+                        title="My submissions"
+                        subtitle="Submitted wallets"
+                        variant="primary"
+                    />
+                    <StatCard
+                        :value="myVerifiedCount"
+                        title="Confirmed"
+                        subtitle="Confirmed reports"
+                        variant="success"
+                    />
+                    <StatCard
+                        :value="myPendingCount"
+                        title="Pending review"
+                        subtitle="Awaiting moderation"
+                        variant="warning"
+                    />
+                    <StatCard
+                        :value="totalScamCount"
+                        title="Database total"
+                        subtitle="Addresses in the public list"
+                        variant="neutral"
+                    />
                 </div>
+            </div>
                 <form
                     @submit.prevent="form.post('/address/create')"
                     class="flex w-full flex-col gap-3 p-6 bg-[#0F0F10] border border-white/4 rounded-sm"
@@ -226,23 +157,19 @@ const truncateAddress = (address, maxLength = 15) => {
                     </span>
                     <div
                         v-if="
-                            addresses
-                                .filter(
-                                    (a) => a.user_id == page.props.auth.user.id
-                                )
+                            addressesList
+                                .filter((a) => a.user_id === page.props.auth.user.id)
                                 .reverse().length > 0
                         "
                         class="flex flex-col gap-3 w-full"
                     >
                         <div
-                                v-for="(address, index) in addresses
-                                    .filter(
-                                        (a) => a.user_id == page.props.auth.user.id
-                                    )
-                                    .reverse() "
+                                v-for="(address, index) in addressesList
+                                    .filter((a) => a.user_id === page.props.auth.user.id)
+                                    .reverse()"
                                     :key="address.id"
                             class="flex w-full py-3 px-6 gap-8 items-center bg-white/2 border border-white/2"
-                        >
+                    >
                             <div class="flex min-w-[86px]">
                                 <span class="text-white text-lg leading-[100%]">
                                     #{{ index + 1 }}
@@ -431,8 +358,8 @@ const truncateAddress = (address, maxLength = 15) => {
                             </div>
                         </div>
                         <div
-                            v-for="(address, index) in addresses.filter(
-                                (a) => a.status == 'scam'
+                            v-for="(address, index) in addressesList.filter(
+                                (a) => a.status === 'scam'
                             )"
                             :key="address.id"
                             class="flex py-3 px-6 bg-white/2 border items-center w-full border-white/2 justify-between"
@@ -522,7 +449,7 @@ const truncateAddress = (address, maxLength = 15) => {
                         </div>
                     </div>
                     <button
-                        @click="downloadJsonFile(addresses)"
+                        @click="downloadJsonFile(addressesList)"
                         class="py-4 px-6 w-max hover:bg-white/5 transition-colors ease-in-out duration-300 rounded-sm border border-white"
                     >
                         <span
@@ -532,7 +459,6 @@ const truncateAddress = (address, maxLength = 15) => {
                         </span>
                     </button>
                 </div>
-            </section>
-        </div>
-    </Layout>
+        </section>
+    </AppLayout>
 </template>

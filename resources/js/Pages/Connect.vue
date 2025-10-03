@@ -1,7 +1,7 @@
 <script setup>
-import { ref, onMounted } from "vue";
-import {router, Head} from "@inertiajs/vue3"
-import Layout from "../Layout/Layout.vue";
+import { ref, onMounted } from 'vue';
+import { router, Head } from '@inertiajs/vue3';
+import AppLayout from '@layout/AppLayout.vue';
 const walletAddress = ref(localStorage.getItem("walletAddress") || "");
 const walletConnected = ref(localStorage.getItem("walletConnected") === "true");
 const loading = ref(false);
@@ -74,7 +74,7 @@ onMounted(() => {
 });
 </script>
 <template>
-    <Layout>
+    <AppLayout :show-footer="false">
     <Head title="Connect Wallet - Vornis" />
     <div
         class="flex flex-col w-full items-center justify-between bg-black min-h-screen pt-[25px] pb-[38px]"
@@ -971,5 +971,5 @@ onMounted(() => {
             </div>
         </transition>
     </div>
-    </Layout>
+    </AppLayout>
 </template>

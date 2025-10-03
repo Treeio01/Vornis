@@ -1,13 +1,12 @@
 <script setup>
-import Header from "../Components/Header.vue";
-import AddressModal from "../Components/AddressModal.vue";
-import { usePage, Head } from "@inertiajs/vue3";
-import { copyAddresses } from "../utils/copy.js";
-import { ref } from "vue";
-import { useAOSComposable } from "../composables/useAOS.js";
-import Layout from "../Layout/Layout.vue";
+import AddressModal from '@components/AddressModal.vue';
+import { Head, usePage } from '@inertiajs/vue3';
+import { ref } from 'vue';
+import AppLayout from '@layout/AppLayout.vue';
+import { useAOSComposable } from '@composables/useAOS.js';
+import { copyAddresses } from '@utils/copy.js';
 
-const { refreshAOS } = useAOSComposable();
+useAOSComposable();
 
 const page = usePage();
 const props = defineProps({
@@ -40,13 +39,11 @@ const truncateAddress = (address, maxLength = 15) => {
 </script>
 
 <template>
-    <Layout>
+    <AppLayout>
         <Head title="Earnings - Vornis" />
-        <div class="flex flex-col w-full items-center justify-between bg-black">
-            <Header :twitter="page.props.twitter" />
-            <section
-                class="flex flex-col mt-[58px] gap-6 w-full max-w-[1728px] items-center mb-[126px]"
-            >
+        <section
+            class="mx-auto flex w-full max-w-[1728px] flex-col gap-6 px-6 py-12 lg:px-12"
+        >
                 <div
                     class="flex w-full flex-col gap-3 p-6 bg-[#0F0F10] border border-white/4 rounded-sm"
                     data-aos="fade-up"
@@ -346,13 +343,12 @@ const truncateAddress = (address, maxLength = 15) => {
                 </div>
             </section>
 
-            <!-- Address Modal -->
-            <AddressModal
-                :isOpen="isModalOpen"
-                :address="selectedAddress"
-                :isTwoButton="false"
-                @close="closeModal"
-            />
-        </div>
-    </Layout>
+        <!-- Address Modal -->
+        <AddressModal
+            :isOpen="isModalOpen"
+            :address="selectedAddress"
+            :isTwoButton="false"
+            @close="closeModal"
+        />
+    </AppLayout>
 </template>

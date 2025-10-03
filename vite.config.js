@@ -26,6 +26,11 @@ export default defineConfig({
         alias: {
             '@': path.resolve(__dirname, 'resources/js'),
             '~': path.resolve(__dirname, 'resources'),
+            '@components': path.resolve(__dirname, 'resources/js/Components'),
+            '@pages': path.resolve(__dirname, 'resources/js/Pages'),
+            '@composables': path.resolve(__dirname, 'resources/js/composables'),
+            '@utils': path.resolve(__dirname, 'resources/js/utils'),
+            '@layout': path.resolve(__dirname, 'resources/js/Components/layout'),
         },
     },
 });

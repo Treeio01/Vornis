@@ -1,10 +1,10 @@
 <script setup>
-import Header from "../Components/Header.vue";
-import { usePage } from "@inertiajs/vue3";
-import { ref, onMounted, onUnmounted, watch, computed } from "vue";
-import { useAOSComposable } from "../composables/useAOS.js";
-import Layout from "../Layout/Layout.vue";
-const { refreshAOS } = useAOSComposable();
+import { Head } from '@inertiajs/vue3';
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
+import AppLayout from '@layout/AppLayout.vue';
+import { useAOSComposable } from '@composables/useAOS.js';
+
+useAOSComposable();
 
 const search = ref("");
 const selectedStatus = ref("all");
@@ -17,7 +17,6 @@ const props = defineProps({
     },
 });
 
-const page = usePage();
 const addressesList = ref([]);
 
 const statusOptions = [
@@ -30,8 +29,9 @@ const statusOptions = [
 watch(
     () => props.addresses,
     (newVal) => {
-        addressesList.value = newVal;
-    }
+        addressesList.value = Array.isArray(newVal) ? [...newVal] : [];
+    },
+    { immediate: true }
 );
 
 const toggleDropdown = () => {
@@ -58,13 +58,11 @@ const truncateAddress = (address, maxLength = 15) => {
 };
 
 onMounted(() => {
-    addressesList.value = props.addresses;
-    document.addEventListener("click", closeDropdown);
+    document.addEventListener('click', closeDropdown);
 });
 
-// Clean up event listener
-onUnmounted(() => {
-    document.removeEventListener("click", closeDropdown);
+onBeforeUnmount(() => {
+    document.removeEventListener('click', closeDropdown);
 });
 
 const filteredAddresses = computed(() => {
@@ -81,18 +79,14 @@ const filteredAddresses = computed(() => {
 </script>
 
 <template>
-    <Layout>
+    <AppLayout>
         <Head title="My Reports - Vornis" />
-        <div class="flex flex-col w-full items-center justify-between bg-black">
-            <Header :twitter="page.props.twitter" />
-            <section
-                class="flex flex-col mt-[58px] gap-8 w-full max-w-[1728px] items-center mb-[126px]"
+        <section class="mx-auto flex w-full max-w-[1728px] flex-col gap-8 px-6 py-12 lg:px-12">
+            <div
+                class="flex w-full flex-col gap-3 p-6 bg-[#0F0F10] border border-white/4 rounded-sm"
+                data-aos="fade-up"
             >
-                <div
-                    class="flex w-full flex-col gap-3 p-6 bg-[#0F0F10] border border-white/4 rounded-sm"
-                    data-aos="fade-up"
-                >
-                    <span class="text-white text-2xl leading-[100%]">
+                <span class="text-white text-2xl leading-[100%]">
                         My report list
                     </span>
                     <div class="flex gap-3 items-center">
@@ -386,7 +380,6 @@ const filteredAddresses = computed(() => {
                         </div>
                     </div>
                 </div>
-            </section>
-        </div>
-    </Layout>
+        </section>
+    </AppLayout>
 </template>
