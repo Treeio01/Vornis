@@ -1,17 +1,35 @@
 <script setup>
-import { Head, useForm, usePage } from '@inertiajs/vue3';
-import { computed, ref, watch } from 'vue';
+import { Head, Link, useForm, usePage } from '@inertiajs/vue3';
+import { computed } from 'vue';
 import AppLayout from '@layout/AppLayout.vue';
 import StatCard from '@components/dashboard/StatCard.vue';
 import Button from '@components/Button.vue';
 import InputBlock from '@components/InputBlock.vue';
 import { useAOSComposable } from '@composables/useAOS.js';
 import { downloadJsonFile } from '@utils/download.js';
+import { copyAddresses } from '@utils/copy.js';
 
 const props = defineProps({
     addresses: {
+        type: Object,
+        default: () => ({
+            data: [],
+            links: [],
+            meta: {},
+        }),
+    },
+    recentUserAddresses: {
         type: Array,
         default: () => [],
+    },
+    stats: {
+        type: Object,
+        default: () => ({
+            my_submissions: 0,
+            my_verified: 0,
+            my_pending: 0,
+            total_scam: 0,
+        }),
     },
 });
 
@@ -19,15 +37,33 @@ useAOSComposable();
 
 const page = usePage();
 
-const addressesList = ref([]);
+const addressesData = computed(() => {
+    const source = props.addresses ?? [];
 
-watch(
-    () => props.addresses,
-    (newVal) => {
-        addressesList.value = Array.isArray(newVal) ? [...newVal] : [];
-    },
-    { immediate: true }
-);
+    if (Array.isArray(source)) {
+        return [...source];
+    }
+
+    if (Array.isArray(source?.data)) {
+        return [...source.data];
+    }
+
+    if (Array.isArray(source?.value)) {
+        return [...source.value];
+    }
+
+    return [];
+});
+
+const paginationLinks = computed(() => {
+    const source = props.addresses;
+
+    if (Array.isArray(source?.links)) {
+        return source.links;
+    }
+
+    return [];
+});
 
 const form = useForm({
     address: '',
@@ -35,32 +71,73 @@ const form = useForm({
     comment: '',
 });
 
-const userId = computed(() => page.props?.auth?.user?.id ?? null);
+const myScamCount = computed(() => props.stats?.my_submissions ?? 0);
+const myVerifiedCount = computed(() => props.stats?.my_verified ?? 0);
+const myPendingCount = computed(() => props.stats?.my_pending ?? 0);
+const totalScamCount = computed(() => props.stats?.total_scam ?? 0);
 
-const myScamCount = computed(
-    () =>
-        addressesList.value.filter(
-            (address) => address.status === 'scam' && address.user_id === userId.value
-        ).length
-);
+const userRecentAddresses = computed(() => props.recentUserAddresses ?? []);
+const scamAddresses = computed(() => {
+    const items = addressesData.value;
 
-const myVerifiedCount = computed(
-    () =>
-        addressesList.value.filter(
-            (address) => address.status === 'verified' && address.user_id === userId.value
-        ).length
-);
+    if (!Array.isArray(items)) {
+        return [];
+    }
 
-const myPendingCount = computed(
-    () =>
-        addressesList.value.filter(
-            (address) => address.status === 'pending' && address.user_id === userId.value
-        ).length
-);
+    return items.filter((address) => address.status === 'scam');
+});
 
-const totalScamCount = computed(
-    () => addressesList.value.filter((address) => address.status === 'scam').length
-);
+const downloadScamAddresses = () => downloadJsonFile(scamAddresses.value ?? []);
+
+const submissionMessage = computed(() => {
+    if (form.recentlySuccessful) {
+        return {
+            type: 'success',
+            text: 'Адрес отправлен на модерацию.',
+        };
+    }
+
+    if (form.errors.general) {
+        return {
+            type: 'error',
+            text: form.errors.general,
+        };
+    }
+
+    return null;
+});
+
+const submitAddress = () => {
+    form.clearErrors('general');
+
+    form.post('/address/create', {
+        preserveScroll: true,
+        onSuccess: () => {
+            form.reset('address', 'token', 'comment');
+        },
+        onError: (errors) => {
+            const hasFieldErrors = Object.keys(errors || {}).length > 0;
+
+            if (!hasFieldErrors) {
+                form.setError(
+                    'general',
+                    'Слишком много запросов. Подождите немного и попробуйте снова.'
+                );
+            }
+        },
+    }).catch((error) => {
+        if (error?.response?.status === 429) {
+            form.setError(
+                'general',
+                'Слишком много запросов. Подождите немного и попробуйте снова.'
+            );
+
+            return;
+        }
+
+        throw error;
+    });
+};
 
 const truncateAddress = (address, maxLength = 15) => {
     if (!address) {
@@ -110,7 +187,7 @@ const truncateAddress = (address, maxLength = 15) => {
                 </div>
             </div>
                 <form
-                    @submit.prevent="form.post('/address/create')"
+                    @submit.prevent="submitAddress"
                     class="flex w-full flex-col gap-3 p-6 bg-[#0F0F10] border border-white/4 rounded-sm"
                     data-aos="fade-up"
                 >
@@ -141,11 +218,23 @@ const truncateAddress = (address, maxLength = 15) => {
                         :error="form.errors.comment"
                         label="Comment (Up to 200 symbols)"
                     />
-                    <Button>
+                    <Button :disabled="form.processing">
                         <span class="text-white text-lg leading-[100%]">
-                            Submit
+                            {{ form.processing ? 'Submitting...' : 'Submit' }}
                         </span>
                     </Button>
+                    <div
+                        v-if="submissionMessage"
+                        :class="[
+                            'rounded-sm border px-4 py-3 text-sm',
+                            submissionMessage.type === 'error'
+                                ? 'border-red-500/60 bg-red-500/10 text-red-300'
+                                : 'border-emerald-500/60 bg-emerald-500/10 text-emerald-300',
+                        ]"
+                        role="alert"
+                    >
+                        {{ submissionMessage.text }}
+                    </div>
                 </form>
 
                 <div
@@ -155,21 +244,12 @@ const truncateAddress = (address, maxLength = 15) => {
                     <span class="text-white text-2xl leading-[100%]">
                         Last Activity
                     </span>
-                    <div
-                        v-if="
-                            addressesList
-                                .filter((a) => a.user_id === page.props.auth.user.id)
-                                .reverse().length > 0
-                        "
-                        class="flex flex-col gap-3 w-full"
-                    >
+                    <div v-if="userRecentAddresses.length > 0" class="flex flex-col gap-3 w-full">
                         <div
-                                v-for="(address, index) in addressesList
-                                    .filter((a) => a.user_id === page.props.auth.user.id)
-                                    .reverse()"
-                                    :key="address.id"
+                            v-for="(address, index) in userRecentAddresses"
+                            :key="address.id"
                             class="flex w-full py-3 px-6 gap-8 items-center bg-white/2 border border-white/2"
-                    >
+                        >
                             <div class="flex min-w-[86px]">
                                 <span class="text-white text-lg leading-[100%]">
                                     #{{ index + 1 }}
@@ -358,9 +438,7 @@ const truncateAddress = (address, maxLength = 15) => {
                             </div>
                         </div>
                         <div
-                            v-for="(address, index) in addressesList.filter(
-                                (a) => a.status === 'scam'
-                            )"
+                            v-for="(address, index) in scamAddresses"
                             :key="address.id"
                             class="flex py-3 px-6 bg-white/2 border items-center w-full border-white/2 justify-between"
                         >
@@ -448,8 +526,28 @@ const truncateAddress = (address, maxLength = 15) => {
                             </div>
                         </div>
                     </div>
+                    <nav
+                        v-if="paginationLinks.length"
+                        class="flex flex-wrap justify-end gap-2 pt-2"
+                    >
+                        <Link
+                            v-for="link in paginationLinks"
+                            :key="link.label"
+                            :href="link.url || '#'"
+                            class="px-3 py-2 text-sm rounded border transition-colors duration-150"
+                            :class="[
+                                link.active
+                                    ? 'bg-primary border-primary text-white'
+                                    : 'border-white/20 text-white/70 hover:bg-white/10',
+                                !link.url ? 'pointer-events-none opacity-40' : '',
+                            ]"
+                            v-html="link.label"
+                            preserve-scroll
+                            preserve-state
+                        />
+                    </nav>
                     <button
-                        @click="downloadJsonFile(addressesList)"
+                        @click="downloadScamAddresses"
                         class="py-4 px-6 w-max hover:bg-white/5 transition-colors ease-in-out duration-300 rounded-sm border border-white"
                     >
                         <span

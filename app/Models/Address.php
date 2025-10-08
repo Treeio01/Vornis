@@ -24,6 +24,7 @@ class Address extends Model
 
     protected $casts = [
         'status' => AddressStatus::class,
+        'reward' => 'float',
     ];
 
     public function user()
@@ -71,5 +72,10 @@ class Address extends Model
             ? Carbon::parse($this->updated_at)->format('H:i:s')
             : null,
         );
+    }
+
+    protected static function newFactory()
+    {
+        return \Database\Factories\AddressFactory::new();
     }
 }

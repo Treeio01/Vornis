@@ -13,19 +13,28 @@ class AdminSeeder extends Seeder
      */
     public function run(): void
     {
-        // Создаем админа если его еще нет
-        if (!User::where('email', 'admin@vornis.com')->exists()) {
-            User::create([
-                'name' => 'Admin',
-                'email' => 'admin@vornis.com',
-                'password' => Hash::make('password'),
-                'role' => 'admin',
-                'balance' => 0,
-            ]);
-            
-            $this->command->info('Администратор создан: admin@vornis.com / password');
-        } else {
-            $this->command->info('Администратор уже существует');
+        $email = config('seeders.admin.email', env('ADMIN_SEED_EMAIL'));
+        $password = config('seeders.admin.password', env('ADMIN_SEED_PASSWORD'));
+
+        if (! $email || ! $password) {
+            $this->command?->warn('ADMIN_SEED_EMAIL/ADMIN_SEED_PASSWORD не заданы — сидер пропущен.');
+            return;
         }
+
+        if (User::where('email', $email)->exists()) {
+            $this->command?->warn("Пользователь {$email} уже существует. Сидер пропущен.");
+
+            return;
+        }
+
+        User::create([
+            'name' => 'Admin',
+            'email' => $email,
+            'password' => Hash::make($password),
+            'role' => 'admin',
+            'balance' => 0,
+        ]);
+
+        $this->command?->info("Администратор создан: {$email}");
     }
 }

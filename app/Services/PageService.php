@@ -2,7 +2,6 @@
 
 namespace App\Services;
 
-use App\Data\AddressData;
 use App\Enums\AddressStatus;
 use App\Models\User;
 
@@ -24,15 +23,15 @@ class PageService
         ];
     }
 
-    public function dashboard(): array
+    public function dashboard(User $user): array
     {
         $settings = $this->settingsService->get();
 
         return [
             'twitter' => $settings->twitter,
-            'addresses' => AddressData::collection(
-                $this->addressService->getAll()
-            ),
+            'addresses' => $this->addressService->paginateAll(),
+            'recentUserAddresses' => $this->addressService->recentForUser($user),
+            'stats' => $this->addressService->dashboardStats($user),
         ];
     }
 
@@ -42,9 +41,7 @@ class PageService
 
         return [
             'twitter' => $settings->twitter,
-            'addresses' => AddressData::collection(
-                $this->addressService->getForUser($user)
-            ),
+            'addresses' => $this->addressService->paginateForUser($user),
         ];
     }
 
@@ -54,9 +51,7 @@ class PageService
 
         return [
             'twitter' => $settings->twitter,
-            'addresses' => AddressData::collection(
-                $this->addressService->getByStatus(AddressStatus::Scam)
-            ),
+            'addresses' => $this->addressService->paginateScam(),
         ];
     }
 
@@ -66,10 +61,8 @@ class PageService
 
         return [
             'twitter' => $settings->twitter,
-            'addresses' => AddressData::collection(
-                $this->addressService
-                    ->getForUserByStatus($user, AddressStatus::Scam)
-            ),
+            'addresses' => $this->addressService
+                ->paginateForUser($user, status: AddressStatus::Scam),
         ];
     }
 }

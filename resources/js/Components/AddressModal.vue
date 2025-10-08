@@ -22,6 +22,11 @@ const emit = defineEmits(['close']);
 const closeModal = () => {
     emit('close');
 };
+
+const copyAndClose = (address) => {
+    copySingleAddress(address);
+    closeModal();
+};
 </script>
 
 <template>
@@ -165,7 +170,9 @@ const closeModal = () => {
                     </span>
                 </button>
 
-                <button v-show="isTwoButton" @click="copySingleAddress(address) & closeModal()"
+                <button
+                    v-show="isTwoButton"
+                    @click="copyAndClose(address)"
                     class="flex py-4 px-6 w-full rounded-sm hover:opacity-75 transition-opacity ease-in-out duration-300 bg-primary shadow-[0_2px_6px_0_rgba(0,0,0,0.12),0_0_2px_0_#FF898B]"
                 >
                     <span class="text-white text-lg leading-[100%]">

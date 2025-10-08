@@ -1,6 +1,6 @@
 <script setup>
-import { Head } from '@inertiajs/vue3';
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
+import { Head, Link } from '@inertiajs/vue3';
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 import AppLayout from '@layout/AppLayout.vue';
 import { useAOSComposable } from '@composables/useAOS.js';
 
@@ -12,12 +12,42 @@ const isDropdownOpen = ref(false);
 
 const props = defineProps({
     addresses: {
-        type: Array,
-        default: () => [],
+        type: Object,
+        default: () => ({
+            data: [],
+            links: [],
+            meta: {},
+        }),
     },
 });
 
-const addressesList = ref([]);
+const addressesData = computed(() => {
+    const source = props.addresses ?? [];
+
+    if (Array.isArray(source)) {
+        return [...source];
+    }
+
+    if (Array.isArray(source?.data)) {
+        return [...source.data];
+    }
+
+    if (Array.isArray(source?.value)) {
+        return [...source.value];
+    }
+
+    return [];
+});
+
+const paginationLinks = computed(() => {
+    const source = props.addresses;
+
+    if (Array.isArray(source?.links)) {
+        return source.links;
+    }
+
+    return [];
+});
 
 const statusOptions = [
     { value: "all", label: "All Status" },
@@ -25,14 +55,6 @@ const statusOptions = [
     { value: "verified", label: "Verified" },
     { value: "pending", label: "Pending" },
 ];
-
-watch(
-    () => props.addresses,
-    (newVal) => {
-        addressesList.value = Array.isArray(newVal) ? [...newVal] : [];
-    },
-    { immediate: true }
-);
 
 const toggleDropdown = () => {
     isDropdownOpen.value = !isDropdownOpen.value;
@@ -66,7 +88,7 @@ onBeforeUnmount(() => {
 });
 
 const filteredAddresses = computed(() => {
-    let filtered = addressesList.value.filter((a) =>
+    let filtered = addressesData.value.filter((a) =>
         a.address.toLowerCase().includes(search.value.toLowerCase())
     );
 
@@ -258,6 +280,27 @@ const filteredAddresses = computed(() => {
 
                             <div class="flex min-w-[24px] min-h-[32px]"></div>
                         </div>
+
+                        <nav
+                            v-if="paginationLinks.length"
+                            class="flex flex-wrap justify-end gap-2 pt-2 w-full"
+                        >
+                            <Link
+                                v-for="link in paginationLinks"
+                                :key="link.label"
+                                :href="link.url || '#'"
+                                class="px-3 py-2 text-sm rounded border transition-colors duration-150"
+                                :class="[
+                                    link.active
+                                        ? 'bg-primary border-primary text-white'
+                                        : 'border-white/20 text-white/70 hover:bg-white/10',
+                                    !link.url ? 'pointer-events-none opacity-40' : '',
+                                ]"
+                                v-html="link.label"
+                                preserve-scroll
+                                preserve-state
+                            />
+                        </nav>
 
                         <div
                             v-for="(address, index) in filteredAddresses"

@@ -144,82 +144,61 @@ export function initAOS() {
     `;
     document.head.appendChild(animationStyles);
     
-    // Загружаем необходимые ресурсы
-    if (!window.IntersectionObserver) {
-        const polyfillScript = document.createElement('script');
-        polyfillScript.src = 'https://polyfill.io/v3/polyfill.min.js?features=IntersectionObserver';
-        document.head.appendChild(polyfillScript);
-    }
-    
-    // Загружаем стили AOS для базовой совместимости
-    if (!document.querySelector('link[href*="aos.css"]')) {
-        const aosStyles = document.createElement('link');
-        aosStyles.rel = 'stylesheet';
-        aosStyles.href = 'https://unpkg.com/aos@2.3.1/dist/aos.css';
-        document.head.appendChild(aosStyles);
-    }
-    
     // Улучшенная реализация анимаций при скролле
     function initEnhancedAnimations() {
+        if (typeof window === 'undefined') {
+            return;
+        }
+
+        if (!('IntersectionObserver' in window)) {
+            console.warn('[AOS] IntersectionObserver не поддерживается — анимации отключены.');
+            return;
+        }
+
         // Получаем все элементы с атрибутом data-aos
-        const animatedElements = document.querySelectorAll('[data-aos]');
-        
-        // Улучшаем анимации для определенных элементов
-        animatedElements.forEach(element => {
-            // Добавляем базовый класс
-            element.classList.add('aos-init');
-        });
-        
+        const animatedElements = () => document.querySelectorAll('[data-aos]');
+
         // Создаем наблюдатель пересечений
-        const observer = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-                // Если элемент входит в область видимости
-                if (entry.isIntersecting) {
-                    requestAnimationFrame(() => {
-                        entry.target.classList.add('aos-animate');
-                    });
-                } else {
-                    requestAnimationFrame(() => {
-                        entry.target.classList.remove('aos-animate');
-                    });
-                }
-            });
-        }, {
-            root: null,
-            rootMargin: '0px 0px -10% 0px',
-            threshold: [0, 0.1, 0.2, 0.3]
-        });
-        
-        // Добавляем все элементы в наблюдатель
-        animatedElements.forEach(element => {
-            observer.observe(element);
-        });
-        
-        // Создаем фейковый объект AOS для совместимости
-        window.AOS = {
-            refresh: function() {
-                animatedElements.forEach(element => {
-                    const rect = element.getBoundingClientRect();
-                    const windowHeight = window.innerHeight;
-                    
-                    if (rect.top < windowHeight && rect.bottom > 0) {
+        const observer = new IntersectionObserver(
+            (entries) => {
+                entries.forEach((entry) => {
+                    if (entry.isIntersecting) {
                         requestAnimationFrame(() => {
-                            element.classList.add('aos-animate');
+                            entry.target.classList.add('aos-animate');
                         });
                     } else {
                         requestAnimationFrame(() => {
-                            element.classList.remove('aos-animate');
+                            entry.target.classList.remove('aos-animate');
                         });
                     }
                 });
             },
-            init: function() {
-                // Ничего не делаем, так как уже инициализировали
+            {
+                root: null,
+                rootMargin: '0px 0px -10% 0px',
+                threshold: [0, 0.1, 0.2, 0.3],
             }
+        );
+
+        const observeElements = () => {
+            animatedElements().forEach((element) => {
+                element.classList.add('aos-init');
+                observer.observe(element);
+            });
         };
-        
+
+        window.AOS = {
+            refresh() {
+                animatedElements().forEach((element) => observer.unobserve(element));
+                observeElements();
+            },
+            init() {
+                observeElements();
+            },
+        };
+
         // Принудительно обновляем все элементы
-        window.AOS.refresh();
+        window.AOS.init();
         
         // Добавляем обработчик прокрутки
         let ticking = false;

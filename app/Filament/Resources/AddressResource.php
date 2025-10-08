@@ -16,6 +16,8 @@ use Filament\Tables\Actions\Action;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Filament\Notifications\Notification;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class AddressResource extends Resource
 {
@@ -44,6 +46,9 @@ class AddressResource extends Resource
                 Forms\Components\TextInput::make('reward')
                     ->label('Награда')
                     ->numeric()
+                    ->minValue(0)
+                    ->maxValue(100000)
+                    ->step(0.01)
                     ->prefix('$VOR'),
                 Forms\Components\TextInput::make('token')
                     ->label('Токен')
@@ -108,20 +113,13 @@ class AddressResource extends Resource
                         Forms\Components\TextInput::make('reward')
                             ->label('Награда')
                             ->numeric()
+                            ->minValue(0)
+                            ->maxValue(100000)
+                            ->step(0.01)
                             ->default(0),
                     ])
                     ->action(function (Address $record, array $data) {
-                        $record->update([
-                            'status' => AddressStatus::Scam,
-                            'remark' => $data['remark'],
-                            'reward' => $data['reward'],
-                        ]);
-
-                        // Обновляем баланс пользователя
-                        $user = User::find($record->user_id);
-                        if ($user) {
-                            $user->increment('balance', $data['reward']);
-                        }
+                        self::handleStatusTransition($record, $data, AddressStatus::Scam);
 
                         Notification::make()
                             ->title('Адрес помечен как SCAM')
@@ -142,20 +140,13 @@ class AddressResource extends Resource
                         Forms\Components\TextInput::make('reward')
                             ->label('Награда')
                             ->numeric()
+                            ->minValue(0)
+                            ->maxValue(100000)
+                            ->step(0.01)
                             ->default(0),
                     ])
                     ->action(function (Address $record, array $data) {
-                        $record->update([
-                            'status' => AddressStatus::Verified,
-                            'remark' => $data['remark'],
-                            'reward' => $data['reward'],
-                        ]);
-
-                        // Обновляем баланс пользователя
-                        $user = User::find($record->user_id);
-                        if ($user) {
-                            $user->increment('balance', $data['reward']);
-                        }
+                        self::handleStatusTransition($record, $data, AddressStatus::Verified);
 
                         Notification::make()
                             ->title('Адрес помечен как VERIFIED')
@@ -176,20 +167,13 @@ class AddressResource extends Resource
                         Forms\Components\TextInput::make('reward')
                             ->label('Награда')
                             ->numeric()
+                            ->minValue(0)
+                            ->maxValue(100000)
+                            ->step(0.01)
                             ->default(0),
                     ])
                     ->action(function (Address $record, array $data) {
-                        $record->update([
-                            'status' => AddressStatus::Pending,
-                            'remark' => $data['remark'],
-                            'reward' => $data['reward'],
-                        ]);
-
-                        // Обновляем баланс пользователя
-                        $user = User::find($record->user_id);
-                        if ($user) {
-                            $user->increment('balance', $data['reward']);
-                        }
+                        self::handleStatusTransition($record, $data, AddressStatus::Pending);
 
                         Notification::make()
                             ->title('Адрес помечен как PENDING')
@@ -222,5 +206,48 @@ class AddressResource extends Resource
             'create' => Pages\CreateAddress::route('/create'),
             'edit' => Pages\EditAddress::route('/{record}/edit'),
         ];
+    }
+
+    /**
+     * Обработчик перехода статуса с контролем наград.
+     */
+    protected static function handleStatusTransition(Address $record, array $data, AddressStatus $status): void
+    {
+        $remark = $data['remark'] ?? null;
+        $incomingReward = (float) ($data['reward'] ?? 0);
+
+        if ($incomingReward < 0) {
+            throw ValidationException::withMessages([
+                'reward' => 'Награда должна быть неотрицательной.',
+            ]);
+        }
+
+        $newReward = round($incomingReward, 2);
+        $previousReward = (float) ($record->reward ?? 0);
+
+        DB::transaction(function () use ($record, $status, $remark, $newReward, $previousReward) {
+            $record->update([
+                'status' => $status,
+                'remark' => $remark,
+                'reward' => $newReward,
+            ]);
+
+            $delta = $newReward - $previousReward;
+
+            $user = User::query()
+                ->whereKey($record->user_id)
+                ->lockForUpdate()
+                ->first();
+
+            if (! $user || $delta === 0.0) {
+                return;
+            }
+
+            if ($delta > 0) {
+                $user->increment('balance', $delta);
+            } else {
+                $user->decrement('balance', abs($delta));
+            }
+        });
     }
 }

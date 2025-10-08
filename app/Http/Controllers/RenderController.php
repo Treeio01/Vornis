@@ -35,7 +35,7 @@ class RenderController extends Controller
 
     public function renderDashboard(Request $request): Response
     {
-        return Inertia::render('Dashboard', $this->pageService->dashboard());
+        return Inertia::render('Dashboard', $this->pageService->dashboard($request->user()));
     }
 
     public function renderMyReports(Request $request): Response

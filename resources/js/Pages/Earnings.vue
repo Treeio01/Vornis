@@ -1,7 +1,7 @@
 <script setup>
 import AddressModal from '@components/AddressModal.vue';
-import { Head, usePage } from '@inertiajs/vue3';
-import { ref } from 'vue';
+import { Head, Link, usePage } from '@inertiajs/vue3';
+import { computed, ref } from 'vue';
 import AppLayout from '@layout/AppLayout.vue';
 import { useAOSComposable } from '@composables/useAOS.js';
 import { copyAddresses } from '@utils/copy.js';
@@ -11,9 +11,41 @@ useAOSComposable();
 const page = usePage();
 const props = defineProps({
     addresses: {
-        type: Array,
-        default: () => [],
+        type: Object,
+        default: () => ({
+            data: [],
+            links: [],
+            meta: {},
+        }),
     },
+});
+
+const addressesData = computed(() => {
+    const source = props.addresses ?? [];
+
+    if (Array.isArray(source)) {
+        return [...source];
+    }
+
+    if (Array.isArray(source?.data)) {
+        return [...source.data];
+    }
+
+    if (Array.isArray(source?.value)) {
+        return [...source.value];
+    }
+
+    return [];
+});
+
+const paginationLinks = computed(() => {
+    const source = props.addresses;
+
+    if (Array.isArray(source?.links)) {
+        return source.links;
+    }
+
+    return [];
 });
 
 // Modal state
@@ -160,7 +192,7 @@ const truncateAddress = (address, maxLength = 15) => {
                                 </div>
                             </div>
                             <div
-                                v-for="(address, index) in addresses"
+                                v-for="(address, index) in addressesData"
                                 :key="address.id"
                                 @click="openModal(address)"
                                 class="flex py-3 px-6 bg-white/2 border items-center w-full border-white/2 justify-between cursor-pointer hover:bg-white/5 transition-colors duration-200"
@@ -205,7 +237,7 @@ const truncateAddress = (address, maxLength = 15) => {
                                         </span>
                                     </div>
                                     <button
-                                        @click="copyAddresses(address)"
+                                        @click.stop="copyAddresses(address)"
                                         class="hover:opacity-75 transition-opacity ease-in-out duration-300"
                                     >
                                         <svg
@@ -262,6 +294,26 @@ const truncateAddress = (address, maxLength = 15) => {
                                 </div>
                             </div>
                         </div>
+                        <nav
+                            v-if="paginationLinks.length"
+                            class="flex flex-wrap justify-end gap-2 pt-2 w-full"
+                        >
+                            <Link
+                                v-for="link in paginationLinks"
+                                :key="link.label"
+                                :href="link.url || '#'"
+                                class="px-3 py-2 text-sm rounded border transition-colors duration-150"
+                                :class="[
+                                    link.active
+                                        ? 'bg-primary border-primary text-white'
+                                        : 'border-white/20 text-white/70 hover:bg-white/10',
+                                    !link.url ? 'pointer-events-none opacity-40' : '',
+                                ]"
+                                v-html="link.label"
+                                preserve-scroll
+                                preserve-state
+                            />
+                        </nav>
                     </div>
                 </div>
                 <div

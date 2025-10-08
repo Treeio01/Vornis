@@ -17,7 +17,9 @@ Route::middleware('guest')->group(function () {
 Route::middleware('auth')->group(function () {
     Route::get('/connect', [RenderController::class, 'renderConnect'])->name('connect');
 
-    Route::post('/user/connect', [UserController::class, 'connect'])->name('user.connect');
+    Route::post('/user/connect', [UserController::class, 'connect'])
+        ->middleware('throttle:10,1')
+        ->name('user.connect');
 
     Route::get('/dashboard', [RenderController::class, 'renderDashboard'])->name('dashboard');
     Route::get('/myReports', [RenderController::class, 'renderMyReports'])->name('myReports');
@@ -25,7 +27,9 @@ Route::middleware('auth')->group(function () {
     Route::get('/earnings', [RenderController::class, 'renderEarnings'])->name('earnings');
 
     Route::prefix('address')->group(function () {
-        Route::post('/create', [AddressController::class, 'store'])->name('address.create');
+        Route::post('/create', [AddressController::class, 'store'])
+            ->middleware('throttle:5,1')
+            ->name('address.create');
     });
 });
 

@@ -1,6 +1,6 @@
 <script setup>
-import { Head } from '@inertiajs/vue3';
-import { ref, watch } from 'vue';
+import { Head, Link } from '@inertiajs/vue3';
+import { computed, ref } from 'vue';
 import AppLayout from '@layout/AppLayout.vue';
 import AddressModal from '@components/AddressModal.vue';
 import { useAOSComposable } from '@composables/useAOS.js';
@@ -11,12 +11,42 @@ useAOSComposable();
 
 const props = defineProps({
     addresses: {
-        type: Array,
-        default: () => [],
+        type: Object,
+        default: () => ({
+            data: [],
+            links: [],
+            meta: {},
+        }),
     },
 });
 
-const addressesList = ref([]);
+const addressesData = computed(() => {
+    const source = props.addresses ?? [];
+
+    if (Array.isArray(source)) {
+        return [...source];
+    }
+
+    if (Array.isArray(source?.data)) {
+        return [...source.data];
+    }
+
+    if (Array.isArray(source?.value)) {
+        return [...source.value];
+    }
+
+    return [];
+});
+
+const paginationLinks = computed(() => {
+    const source = props.addresses;
+
+    if (Array.isArray(source?.links)) {
+        return source.links;
+    }
+
+    return [];
+});
 
 const isModalOpen = ref(false);
 const selectedAddress = ref(null);
@@ -32,16 +62,8 @@ const closeModal = () => {
 };
 
 const handleDownload = () => {
-    downloadJsonFile(addressesList.value);
+    downloadJsonFile(addressesData.value);
 };
-
-watch(
-    () => props.addresses,
-    (newVal) => {
-        addressesList.value = Array.isArray(newVal) ? [...newVal] : [];
-    },
-    { immediate: true }
-);
 
 const truncateAddress = (address, maxLength = 15) => {
     if (!address) return '';
@@ -66,7 +88,7 @@ const truncateAddress = (address, maxLength = 15) => {
                 </span>
                 <div class="flex w-full items-center gap-3">
                     <button
-                        @click="copyAddresses(addressesList)"
+                        @click="copyAddresses(addressesData)"
                         class="py-4 flex px-6 w-full justify-center gap-2 items-center hover:bg-white/5 transition-colors ease-in-out duration-300 rounded-sm border border-white"
                     >
                         <span
@@ -175,7 +197,7 @@ const truncateAddress = (address, maxLength = 15) => {
                         </div>
                     </div>
                     <div
-                        v-for="(address, index) in addressesList"
+                        v-for="(address, index) in addressesData"
                         :key="address.id"
                         @click="openModal(address)"
                         class="flex py-3 px-6 bg-white/2 border items-center w-full border-white/2 justify-between cursor-pointer hover:bg-white/5 transition-colors duration-200"
@@ -214,7 +236,7 @@ const truncateAddress = (address, maxLength = 15) => {
                                 </span>
                             </div>
                             <button
-                                @click="copyAddresses(addressesList)"
+                                @click.stop="copyAddresses(address)"
                                 class="hover:opacity-75 transition-opacity ease-in-out duration-300"
                             >
                                 <svg
@@ -259,6 +281,26 @@ const truncateAddress = (address, maxLength = 15) => {
                             </span>
                         </div>
                     </div>
+                    <nav
+                        v-if="paginationLinks.length"
+                        class="flex flex-wrap justify-end gap-2 pt-2 w-full"
+                    >
+                        <Link
+                            v-for="link in paginationLinks"
+                            :key="link.label"
+                            :href="link.url || '#'"
+                            class="px-3 py-2 text-sm rounded border transition-colors duration-150"
+                            :class="[
+                                link.active
+                                    ? 'bg-primary border-primary text-white'
+                                    : 'border-white/20 text-white/70 hover:bg-white/10',
+                                !link.url ? 'pointer-events-none opacity-40' : '',
+                            ]"
+                            v-html="link.label"
+                            preserve-scroll
+                            preserve-state
+                        />
+                    </nav>
                 </div>
             </div>
         </section>

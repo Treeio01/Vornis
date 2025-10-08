@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Data\AddressData;
 use App\Http\Requests\StoreAddressRequest;
 use App\Services\AddressService;
 use Illuminate\Http\RedirectResponse;
@@ -17,10 +16,6 @@ class AddressController extends Controller
     {
         $this->addressService->storeForUser($request->user(), $request->validated());
 
-        return back()->with([
-            'addresses' => AddressData::collection(
-                $this->addressService->getAll()
-            ),
-        ]);
+        return back();
     }
 }
